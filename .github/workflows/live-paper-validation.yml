@@ -1,0 +1,56 @@
+name: Live Paper Arbitrage Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Unit tests
+        run: python -m unittest -v test_engine.py
+      - name: Synthetic property validation
+        run: python property_validation.py
+      - name: Live paper scan
+        env:
+          PAPER_START_USDT: '68'
+          RUN_SECONDS: '120'
+          MIN_MARKETS: '50'
+          MAX_SYMBOLS: '160'
+          TAKER_FEE_RATE: '0.001'
+          SLIPPAGE_RATE: '0.0002'
+          MIN_NET_EDGE_PCT: '0.05'
+          MAX_QUOTE_AGE_MS: '1000'
+          MAX_SNAPSHOT_SKEW_MS: '250'
+        run: python binance_live.py
+      - name: Show evidence summary
+        if: always()
+        run: |
+          echo '--- paper_summary.json ---'
+          test -f paper_summary.json && cat paper_summary.json || true
+          echo '--- journal tail ---'
+          test -f paper_journal.jsonl && tail -30 paper_journal.jsonl || true
+      - name: Upload evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-arbitrage-evidence
+          path: |
+            paper_summary.json
+            paper_journal.jsonl
+          if-no-files-found: warn
+          retention-days: 14
