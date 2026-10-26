@@ -1,80 +1,170 @@
-# Final Paper-Trading Candidate — 2026-10-26
+# Current Paper-Trading Benchmark — 2026-10-26
 
 ## Status
-PARTIALLY VERIFIED. This is the strongest candidate found in the research run, but it is **not verified profitable in forward live trading** and **real trading remains disabled**.
+**PARTIALLY VERIFIED — not VERIFIED.**
 
-## Candidate
-- Venue used for historical/live validation: NDAX public market data
-- Timeframe: 4-hour candles
+This remains the strongest repeatable candidate in the research program, but future profitability is unknown. Real trading is disabled. No private exchange credentials are required or used.
+
+## Benchmark
+- Venue for primary historical/live paper validation: NDAX public market data
+- Timeframe: 4-hour completed candles only
 - Signal: EMA(50) / EMA(150), long-only
-- Entry: EMA50 > EMA150 on the last completed 4h candle; execute model at the next 4h open
-- Exit: EMA50 < EMA150 on the last completed 4h candle; execute model at the next 4h open
-- Stress-selected portfolio weights:
-  - BTC/CAD: 45%
-  - ETH/CAD: 5%
-  - Cash: 50%
-- Real orders: DISABLED
-- Exchange API keys: NOT REQUIRED / NOT USED
+- Entry condition: EMA50 > EMA150 on the last completed 4h candle; execution model uses the next tradable bar / observed paper execution evidence
+- Exit condition: EMA50 < EMA150 on the last completed 4h candle
+- Nominal weights: BTC/CAD 45%, ETH/CAD 5%, Cash 50%
+- Current allocator: `LOCKED_BENCHMARK`
+- Real orders: OFF
 
 ## Cost model
-NDAX fee model used: 0.20% per side. Live Level-1 sampling was used to estimate crossing-spread friction.
-- BTC modeled round-trip friction: ~0.83%
-- ETH modeled round-trip friction: ~0.99%
-- Selection was repeated at 1.5x modeled costs.
+- NDAX fee: 0.20% per side
+- Historical crossing-cost proxy uses observed Level-1 spread assumptions
+- BTC baseline spread proxy: ~0.4307%
+- ETH baseline spread proxy: ~0.5882%
+- Robustness checks include 1x, 1.5x and 2x modeled costs
 
-## Selection methodology
-Weights were selected using 2024 and 2025 only. Requirements:
-1. Positive modeled return in both 2024 and 2025 at 1.5x modeled costs.
-2. Maximum yearly modeled drawdown <= 20%.
-3. Among eligible weights, choose highest stressed 2024+2025 return sum.
-4. 2026 was held out from weight selection.
+## Strongest robustness evidence
+### Strict rolling out-of-sample — fixed benchmark
+Common NDAX BTC/ETH 4h history, training 1200 bars, test 400 bars, embargo 28 bars.
 
-Selected weights at 1.5x training costs:
-- 2024: +45.537%, max DD 18.49%
-- 2025: +0.181%, max DD 10.21%
+- Base-cost chained OOS: **+69.65%**
+- 1.5x-cost chained OOS: **+59.12%**
+- 2x-cost chained OOS: **+49.26%**
+- Positive folds: **9 / 17**
 
-Held-out 2026 evaluation through 2026-10-26:
-- Base modeled costs: +3.787%, max DD 8.72%
-- 1.5x modeled costs: +2.464%, max DD 9.06%
+A training-selected adaptive-weight version performed materially worse than the fixed 45/5/50 benchmark, which is evidence against relying on continuous weight optimization.
 
-Full 2024-2026-10-26 (descriptive, not independent OOS):
-- Base costs: +55.778%, max DD 18.91%
-- 1.5x costs: +47.657%, max DD 19.70%
+### Cross-venue price-pattern portability
+Kraken public BTC/ETH reference data, same EMA50/150 portfolio logic. This is a portability proxy, not a Kraken executable fee model.
 
-## Same-weight Buy & Hold benchmark
-Using the same BTC 45% / ETH 5% / Cash 50% allocation and the same cost proxy:
-- Full period base: +43.107%, max DD 40.22%
-- 2024: +64.605%, max DD 18.40%
-- 2025: -6.093%, max DD 19.65%
-- Held-out 2026: -4.804%, max DD 21.16%
-- 1.5x-cost full period: +42.716%, max DD 40.17%
+- 1.5x-cost fold chain: **+38.27%**
+- 2x-cost fold chain: **+30.18%**
 
-This benchmark supports the conclusion that the trend filter added downside control in the tested period; it does not prove future outperformance.
+This supports cross-venue pattern portability, but does not prove executable Kraken profitability.
 
-## Current live signal at validation time
-Both sleeves are in CASH state.
-- BTC/CAD: EMA50 below EMA150; last bearish cross observed 2026-10-18. Live spread observed ~0.432% during the final signal check.
-- ETH/CAD: EMA50 below EMA150; last bearish cross observed 2026-10-11. Live spread observed ~0.688% during the final signal check.
+## Timing-specificity test — FAILED TO PROVE
+A retrospective circular-shift null test was run after correcting the candle policy to include only rows with `candle_end <= invocation time`.
 
-At a normalized 68 CAD test balance, the 45% BTC sleeve and 5% ETH sleeve were above NDAX minimum quantity and within observed top-of-book depth at the validation snapshot. This is a point-in-time liquidity check only.
+Model:
+- fixed 45% BTC / 5% ETH / 50% cash
+- next-bar execution
+- 1.5x NDAX cost proxy
+- actual descriptive return over the test span: +71.01%
+- actual max drawdown: 20.83%
 
-No paper entry should be created until the relevant completed 4h candle produces EMA50 > EMA150.
+Two null models were tested:
 
-## Rejected approaches
-- Binance triangular arbitrage: no positive net edge in live tested samples after costs.
-- Binance/Kraken taker arbitrage: raw price discrepancies existed, but none remained positive after modeled fees/slippage.
-- NDAX DOGE mean-reversion: historical backtest looked promising, but live spread/depth made the original cost model too optimistic.
-- ATR(3x/4x) trailing-stop variants on ETH trend strategy: degraded stability and/or returns.
-- ETH 4h+6h dual-confirmation: did not improve risk-adjusted performance versus the simpler 4h signal.
-- BTC/ETH relative-strength rotation: zero candidates passed the stressed 2024+2025 positive-return and <=20% yearly drawdown gate.
+1. Independent BTC and ETH circular signal shifts:
+   - 250 simulations
+   - empirical one-sided **p = 0.1394**
 
-## Forward paper monitoring
-A 4-hour condition watch is configured to check completed NDAX BTC/CAD and ETH/CAD EMA50/EMA150 signals. It notifies only on signal changes and is prohibited from placing real trades.
+2. Common portfolio circular shift preserving cross-asset timing relationship:
+   - 250 simulations
+   - empirical one-sided **p = 0.1355**
 
-## Evidence limitations / risks
-- Backtests are not proof of future profitability.
-- Strategy family, parameters and portfolio weights were researched on historical data; multiple-testing / data-mining risk remains.
-- Historical NDAX bid/ask fields were not trusted for historical spread reconstruction. Costs use current live Level-1 spread sampling plus fees, with a 1.5x stress test.
-- The 2026 result is historical held-out data, not a prospective forward test.
-- No authenticated orders, real partial-fill behavior, real account fee statements, tax treatment, transfer/rebalancing costs, outages, or real execution latency were tested.
-- Forward paper trading through future signal changes is still required before considering any real-money deployment.
+Promotion rule required both p-values < 0.05.
+
+**Result: timing specificity is NOT established by this test.**
+
+This does not erase the rolling-OOS results, but it is a material limitation and is one reason the strategy remains PARTIALLY VERIFIED.
+
+## Moving-block bootstrap — partial support, material tail risk
+Retrospective moving-block bootstrap of realized portfolio log returns:
+- 300 simulations
+- 42-bar blocks = 7 days of 4h bars
+- 1.5x cost model
+
+Results:
+- Probability terminal return > 0: **90.0%**
+- Terminal return p05: **-16.28%**
+- Median: **+68.42%**
+- p95: **+267.13%**
+- Median max drawdown: **24.93%**
+- p95 max drawdown: **45.08%**
+- Worst simulated max drawdown: **63.59%**
+
+Interpretation: the historical return process is not uniformly fragile, but tail drawdown risk is materially larger than the realized 20.83% drawdown. This is a retrospective resampling diagnostic, not a forecast or independent holdout.
+
+## Current live paper state
+Both BTC and ETH are currently **CASH** on the latest verified completed 4h candle.
+
+Current Quant Intelligence classification:
+- Primary regime: `RISK_OFF_TREND`
+- Structure: `TRANSITIONAL`
+- Volatility: `LOW_VOL`
+- Allocator: `LOCKED_BENCHMARK`
+- Deployable weights under current signals: BTC 0%, ETH 0%, Cash 100%
+
+The regime layer is observational only. It cannot override validated benchmark weights until stressed OOS plus prospective forward-paper evidence demonstrates an improvement.
+
+Forward paper account is normalized to 68 CAD research capital only:
+- Equity: 68 CAD
+- Closed forward trades: 0
+- Open forward trades: 0
+- Real orders: false
+
+Therefore forward win rate, profit factor and expectancy remain N/A rather than being inferred from backtests.
+
+## Other strategy status
+### BTC Donchian breakout
+**RESEARCH ONLY.**
+
+Later stressed adaptive rolling walk-forward overrode earlier favorable dense-grid evidence:
+- Base chain: +5.36%
+- 1.5x chain: **-5.43%**
+- 2x chain: **-15.11%**
+- Positive folds: 4 / 10
+
+Do not promote Donchian based on older research notes.
+
+### Hyperliquid short-basket hypothesis
+**REJECTED.**
+- 144 parameter configurations screened
+- Training survivors at 1.5x costs: **0**
+- 2026 survivors positive at both 1.5x and 2x: **0**
+- Funding was not included, so failure occurred even before adding that extra cost/risk dimension
+
+### Hyperliquid elite-trader 95–100% fill-level screen
+**NOT CONFIRMED at completed trade-cycle level.**
+
+Five top-100 wallets passed the initial closing-fill screen, but independent position-cycle reconstruction found:
+- two wallets: 0 exact reconstructable cycles in truncated samples
+- one wallet: 3 exact cycles, 3 wins — insufficient sample
+- one wallet: 1 exact cycle, 1 win — insufficient sample
+- one wallet: 3 exact cycles, 2 wins / 1 loss = 66.7%
+
+Conclusion: fill-level win rate must not be treated as trade-cycle win rate.
+
+### Binance Web3 Gold #2 BSC
+**NOT ENOUGH DATA.**
+A public sampled watcher is active, but no transaction events have yet been captured in the sampled windows. No strategy is inferred until transaction-level evidence exists.
+
+### ZzzzzSol
+**REJECTED as a copyable trading strategy.**
+Its apparent edge materially involved creator-fee / token-launch privileges unavailable to an ordinary external trader.
+
+### Other rejected paths
+- Dual momentum: 0/24 strict training survivors
+- Long-horizon trend variants: insufficient stability
+- Binance triangular arbitrage: no net-positive observed edge after realistic costs
+- Binance/Kraken taker arbitrage: raw discrepancies did not survive modeled fees/slippage
+- XRP dense mean-reversion grid: rejected under strict holdout/cost gate
+
+## Security and execution controls
+- Real trading remains OFF
+- Paper fills use observed ask on entry and observed bid on exit plus 0.20% fee/side
+- A paper fill is blocked when observed Level-1 depth is insufficient
+- Quant internal SECURITY DEFINER RPCs are restricted to `service_role`; anon/authenticated direct execution is revoked
+- Regime snapshots and paper research tables use RLS and are service-managed
+
+## What is still required before any higher status
+1. Prospective forward-paper trades across actual future signal transitions
+2. Enough closed forward trades to estimate expectancy, win rate, drawdown and execution quality
+3. Multiple-testing correction / deflated-Sharpe or equivalent family-level correction
+4. More execution-tail stress: spread spikes, gaps, delayed fills, missed fills and deeper-book impact
+5. Regime attribution based on sufficient historical and forward sample, without allowing regime labels to overfit allocation
+6. A second independent strategy that survives stressed rolling OOS and forward-paper validation and adds diversification
+
+## Final judgment
+The EMA portfolio is the current benchmark because it has the strongest combined rolling-OOS, cost-stress and cross-venue evidence. However, the failed-to-prove random-timing gate, bootstrap tail drawdowns, zero forward closed trades, and multiple-testing risk prevent any honest upgrade to VERIFIED.
+
+**Future profitability: UNKNOWN.**
