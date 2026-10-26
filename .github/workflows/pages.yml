@@ -40,3 +40,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+# Pages source enabled via GitHub Actions on 2026-10-26.
