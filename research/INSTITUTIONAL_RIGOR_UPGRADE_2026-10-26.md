@@ -1,78 +1,52 @@
 # Institutional Rigor Upgrade — 2026-10-26
 
-## Scope
-Paper-only research. No private exchange credentials. No real orders.
+## SUPERSEDED RESEARCH SNAPSHOT
 
-## Research standard
-Candidates are evaluated with next-bar execution, NDAX flat 0.20% per trade, observed live Level-1 spread proxies, training cost stress at 1.5x, untouched 2026 holdout, 2x cost stress, parameter-neighborhood checks, and minimum trade-count / drawdown gates.
+This file is retained only as a record of an earlier research stage. **Do not use its Donchian ranking or PARTIALLY VERIFIED label as the current strategy status.**
 
-## Five-asset institutional screen
-Assets: BTC, ETH, SOL, XRP, DOGE (CAD pairs, NDAX 4h historical data from 2024-01-01 through 2026-10-26/27).
+The authoritative current assessment is:
 
-### BTC breakout candidate
-Initial selected candidate from training-only screen: Donchian 100/40.
-- 2024 @ 1.5x cost: +80.11%, 7 trades, max DD 26.02%
-- 2025 @ 1.5x cost: +8.65%, 6 trades, max DD 14.64%
-- 2026 holdout: +12.29%, 6 trades, max DD 14.44%
-- 2026 @ 1.5x cost: +9.52%
-- 2026 @ 2x cost: +6.82%
-Initial coarse neighborhood was weak, so a dense grid was required.
+- `research/FINAL_CANDIDATE.md`
 
-### Dense BTC Donchian grid
-71 parameter combinations tested around the candidate. Strict gate:
-- 2024 and 2025 both positive at 1.5x modeled costs
-- >=8 combined training trades
-- training max DD <=30%
-- 2026 positive at 1.5x and 2x costs
-- >=5 2026 holdout trades
+## Why this snapshot was superseded
 
-Result: 11/71 strict survivors, clustered around entry windows 90–130 4h bars and exit windows 40–50 4h bars. This argues against a single-parameter island.
-Examples:
-- Donchian 90/45: 2026 +17.24%; 1.5x +14.83%; 2x +12.46%
-- Donchian 100/45: same 2026 profile; 2025 training +6.46%
-- Donchian 100/40: 2026 +12.29%; 1.5x +9.52%; 2x +6.82%
+The earlier dense-grid and timeframe tests made BTC Donchian breakout look promising. A later, stricter adaptive rolling walk-forward test materially changed the conclusion:
 
-### Timeframe robustness
-Equivalent-duration breakout grids were tested on 2h and 6h data.
-- 2h: 0/25 strict survivors — FAILED timeframe robustness on 2h.
-- 6h: 7/18 strict survivors — PASSED on 6h.
+- 10 out-of-sample folds
+- Base chained return: **+5.36%**
+- 1.5x-cost chained return: **-5.43%**
+- 2x-cost chained return: **-15.11%**
+- Positive folds: **4 / 10**
 
-The 6h survivors cluster around approximately 15–20 day entry lookbacks and 6–9 day exit lookbacks, consistent with the successful duration region seen on 4h.
-Training-selected robust representative: Donchian 70/30 on 6h bars (about 17.5-day entry, 7.5-day exit).
-- 2024 @1.5x: +66.38%, 8 trades, max DD 31.4%
-- 2025 @1.5x: +6.35%, 6 trades, max DD 14.5%
-- 2026 holdout: +18.17%, 5 trades, max DD 15.6%
-- 2026 @1.5x: +15.74%
-- 2026 @2x: +13.35%
+Therefore Donchian is now:
 
-Status: PARTIALLY VERIFIED. Strong historical/OOS/cost/parameter evidence, but 2h failure and small trade count mean forward-paper validation remains mandatory.
+**RESEARCH_ONLY**
 
-### XRP mean-reversion candidate
-Coarse screen found RSI-trend 35 promising, but dense robustness test evaluated 135 nearby parameter combinations and produced 0 strict survivors once >=5 holdout trades and 2x-cost profitability were required.
-Status: REJECTED under strict gate.
+It is not an active paper strategy and is not ranked as a validated second edge.
 
-### ETH / SOL / DOGE
-No candidate passed the institutional training gate in the current 4h multi-family screen under the new strict rule.
-Status: no new survivor from this pass.
+## Current benchmark status
 
-## Live paper state
-BTC/CAD Donchian 70/30 6h is currently CASH.
-- Last event: EXIT on 2026-10-08 06:00 UTC
-- Latest checked close: 111,719.93 CAD
-- Entry level: 120,046.82 CAD
-- Distance to entry: ~7.45%
-- Exit level: 110,900.32 CAD
-- NDAX Level-1 spread at check: ~0.432%
-- Real orders: false
+The fixed BTC/ETH EMA50/150 4h portfolio at nominal 45% BTC / 5% ETH / 50% cash remains the strongest benchmark, but only **PARTIALLY VERIFIED**.
 
-## Current ranking
-1. Existing BTC/ETH 4h EMA50/150 portfolio — benchmark, forward paper pending.
-2. BTC/CAD Donchian duration breakout (~15–20 day entry / ~6–9 day exit), with 6h Donchian 70/30 as the current forward-paper representative — PARTIALLY VERIFIED.
-3. XRP RSI-trend candidate — REJECTED after dense grid.
+Later evidence not present in the original version of this document includes:
 
-## Non-negotiable next gates
-- Forward-paper signal execution on completed bars only.
-- Monitor live spread/depth at every signal.
-- Track realized paper fills, opportunity count, trade duration, MAE/MFE, net expectancy, and drawdown.
-- Cross-validate the breakout concept on another accessible market data venue where practical.
-- Keep real trading disabled until forward evidence is sufficient.
+- strict NDAX rolling OOS: +69.65% base, +59.12% at 1.5x costs, +49.26% at 2x costs; 9/17 positive folds
+- supportive Kraken price-pattern portability
+- dual random-timing null tests that **failed to establish timing specificity**: p=0.1394 and p=0.1355
+- moving-block bootstrap with 90% terminal-positive simulations but p05 terminal return -16.28%, max-DD p95 45.08%, worst simulated DD 63.59%
+- zero closed prospective forward-paper trades at the time of this update
+
+## Other later research changes
+
+- Hyperliquid short-basket: **REJECTED**, 0/144 training survivors at 1.5x costs
+- Hyperliquid 95–100% fill-level elite screens: **not confirmed at exact completed trade-cycle level**
+- Binance Web3 Gold #2 BSC: **NOT ENOUGH DATA**
+- ZzzzzSol: **REJECTED as a copyable edge** because creator-fee / token-launch privileges materially affected the observed economics
+
+## Safety state
+
+- Paper research only
+- Real orders: OFF
+- No private exchange credentials used
+
+See `research/FINAL_CANDIDATE.md` for the current evidence hierarchy and promotion gates.
